@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root { --paper:#FBFBF8; --ink:#1F2A1F; --muted:#5E6B5E; --leaf:#2F6B3A; --line:#CFD6CC; --field:#FFFFFF;
       --error:#B3261E; --tint:#EEF4EC; --warn:#8A5A00; --warn-bg:#FBF1DC; }
@@ -155,6 +156,8 @@
         el('td', { className:'num', textContent:total(c) }),
         el('td', {}, el('div', { className:'row-actions' },
           el('button', { type:'button', className:'link', textContent:'History', onclick:() => showHistory(c, tr) }),
+          el('button', { type:'button', className:'secondary', textContent:'PDF', onclick:e => downloadPdf(c, e.currentTarget),
+            ariaLabel:`Download PDF of count from ${fmtDate(c.submittedAt)} by ${who(c)}` }),
           el('button', { type:'button', className:'secondary', textContent:'Edit', onclick:() => startEdit(c, tr),
             ariaLabel:`Edit count from ${fmtDate(c.submittedAt)} by ${who(c)}` }))));
       tr.dataset.id = c.id;
@@ -267,6 +270,105 @@
         list.innerHTML = '';
         list.append(el('li', { className:'error', textContent:err.message }));
       }
+    }
+
+    // PDF of one count. Recounted counts also get their change history.
+    async function downloadPdf(c, btn) {
+      if (!window.jspdf) { alert('The PDF tool could not load. Reload the page and try again.'); return; }
+      const label = btn.textContent;
+      btn.disabled = true; btn.textContent = '…';
+      let history = [];
+      if (c.updatedAt) {
+        try {
+          const res = await fetch(`/api/counts/${c.id}/history`);
+          if (res.ok) history = await res.json();
+        } catch {}
+      }
+      try {
+        buildPdf(c, history);
+      } finally {
+        btn.disabled = false; btn.textContent = label;
+      }
+    }
+
+    function buildPdf(c, history) {
+      const doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4' });
+      const left = 20, right = 190, labelW = 34;
+      let y = 28;
+      const newPageIfNeeded = need => { if (y + need > 275) { doc.addPage(); y = 25; } };
+      const pair = (k, v) => {
+        doc.setFont('helvetica', 'bold'); doc.text(k, left, y);
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(String(v), right - left - labelW);
+        doc.text(lines, left + labelW, y);
+        y += 6.5 * lines.length;
+      };
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(47, 107, 58);
+      doc.text('Stock Count', left, y);
+      if (c.updatedAt) {
+        doc.setFontSize(10); doc.setTextColor(138, 90, 0);
+        doc.text('RECOUNTED', right, y, { align:'right' });
+      }
+
+      y += 12; doc.setFontSize(11); doc.setTextColor(40, 40, 40);
+      pair('Count ID', `#${c.id}`);
+      pair('Counted by', who(c));
+      pair('Counted on', new Date(c.submittedAt).toLocaleString(undefined, { dateStyle:'long', timeStyle:'short' }));
+      if (c.updatedAt) {
+        pair('Recounted by', c.updatedBy || '');
+        pair('Recounted on', new Date(c.updatedAt).toLocaleString(undefined, { dateStyle:'long', timeStyle:'short' }));
+        if (c.editNote) pair('Reason', c.editNote);
+      }
+
+      y += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.text(c.updatedAt ? 'Item (current count)' : 'Item', left, y);
+      doc.text('Quantity', right, y, { align:'right' });
+      y += 3; doc.setDrawColor(47, 107, 58); doc.setLineWidth(0.6); doc.line(left, y, right, y);
+      doc.setFont('helvetica', 'normal'); doc.setDrawColor(207, 214, 204); doc.setLineWidth(0.3);
+      items.forEach(f => {
+        y += 9; doc.text(f.label, left, y);
+        doc.text(String(c[f.id] ?? 0), right, y, { align:'right' });
+        y += 3.5; doc.line(left, y, right, y);
+      });
+      y += 9; doc.setFont('helvetica', 'bold');
+      doc.text('Total', left, y); doc.text(String(total(c)), right, y, { align:'right' });
+
+      if (history.length > 1) {
+        y += 16; newPageIfNeeded(30);
+        doc.setFontSize(13); doc.setTextColor(47, 107, 58);
+        doc.text('Change history', left, y);
+        doc.setFontSize(10); doc.setTextColor(40, 40, 40);
+        y += 3; doc.setDrawColor(47, 107, 58); doc.setLineWidth(0.6); doc.line(left, y, right, y);
+        doc.setDrawColor(207, 214, 204); doc.setLineWidth(0.3);
+        history.forEach((v, i) => {
+          const isOriginal = i === history.length - 1;
+          const title = i === 0 ? 'Current' : isOriginal ? 'Original count' : 'Earlier version';
+          const when = new Date(isOriginal ? c.submittedAt : v.validFrom).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' });
+          const by = isOriginal ? who(c) : `${v.updatedBy || ''}${v.editNote ? ' · ' + v.editNote : ''}`;
+          const qty = items.map(f => `${f.label} ${v[f.id]}`).join(',  ') +
+            `  (total ${items.reduce((s, f) => s + (v[f.id] ?? 0), 0)})`;
+          newPageIfNeeded(20);
+          y += 7; doc.setFont('helvetica', 'bold'); doc.text(title, left, y);
+          doc.setFont('helvetica', 'normal'); doc.text(when, right, y, { align:'right' });
+          y += 5.5; doc.text(doc.splitTextToSize(qty, right - left), left, y);
+          y += 5; doc.setTextColor(110, 110, 110); doc.text(doc.splitTextToSize(`by ${by}`, right - left), left, y);
+          doc.setTextColor(40, 40, 40);
+          y += 3.5; doc.line(left, y, right, y);
+        });
+      }
+
+      const pages = doc.getNumberOfPages();
+      for (let i = 1; i <= pages; i++) {
+        doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+        doc.text(`Generated ${new Date().toLocaleString()}`, left, 287);
+        if (pages > 1) doc.text(`Page ${i} of ${pages}`, right, 287, { align:'right' });
+      }
+
+      const stamp = new Date(c.submittedAt).toISOString().slice(0, 10);
+      const name = who(c).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      doc.save(`stock-count-${c.id}-${stamp}${name ? '-' + name : ''}.pdf`);
     }
 
     document.getElementById('refresh').addEventListener('click', load);
