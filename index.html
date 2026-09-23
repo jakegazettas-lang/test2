@@ -3,79 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Stock Count</title>
+  <title>New Count</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="app.css">
   <style>
-    :root { --paper:#FBFBF8; --ink:#1F2A1F; --muted:#5E6B5E; --leaf:#2F6B3A; --line:#CFD6CC; --field:#FFFFFF; --error:#B3261E; }
-    @media (prefers-color-scheme: dark) {
-      :root { --paper:#161B16; --ink:#E8EDE6; --muted:#A3AFA2; --leaf:#7CC08A; --line:#3A453A; --field:#1E251E; --error:#F2B8B5; }
-    }
-    * { box-sizing: border-box; }
-    body { margin:0; background:var(--paper); color:var(--ink);
-      font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif; font-size:1.0625rem; line-height:1.5; }
-    main { max-width:34rem; margin:0 auto; padding:3rem 1.25rem 4rem; }
-    h1 { font-size:2.25rem; line-height:1.1; margin:0 0 .5rem; color:var(--leaf); }
-    .intro { color:var(--muted); margin:0 0 2.5rem; }
-    a { color:var(--leaf); font-weight:700; }
-    fieldset { border:0; padding:0; margin:0 0 2.25rem; }
-    legend { font-weight:700; font-size:1.25rem; margin-bottom:1rem; padding:0; }
+    .form-wrap { max-width:46rem; }
+    #sections fieldset { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:1rem 1.1rem 1.1rem; margin:0 0 1rem; min-width:0; }
+    #sections legend { float:left; width:100%; font-weight:700; font-size:1rem; padding:0; margin-bottom:.8rem; }
+    #sections legend + * { clear:both; }
     .two-column { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-    @media (max-width:480px) { .two-column { grid-template-columns:1fr; } }
-    label { display:block; font-weight:700; margin-bottom:.35rem; }
-    input { width:100%; font:inherit; color:var(--ink); background:var(--field);
-      border:1.5px solid var(--line); border-radius:6px; padding:.65rem .75rem; }
-    input:focus-visible, button:focus-visible, a:focus-visible { outline:3px solid var(--leaf); outline-offset:2px; }
-    .item { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.85rem 0; border-bottom:1px solid var(--line); }
+    @media (max-width:560px) { .two-column { grid-template-columns:1fr; } }
+    #sections label { display:block; font-weight:700; font-size:.8rem; margin-bottom:.3rem; }
+    #sections input[type="text"] { width:100%; }
+    .item { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.65rem 0; border-bottom:1px solid var(--line); }
     .item:first-of-type { border-top:1px solid var(--line); }
-    .item label { margin:0; font-weight:400; font-size:1.125rem; }
-    .stepper { display:flex; align-items:center; gap:.4rem; }
-    .stepper input { width:5rem; text-align:center; -moz-appearance:textfield; }
+    #sections .item label { margin:0; font-weight:400; font-size:.95rem; }
+    .stepper { display:flex; align-items:center; gap:.35rem; }
+    .stepper input { width:4.5rem; text-align:center; -moz-appearance:textfield; }
     .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
-    .stepper button { width:2.5rem; height:2.5rem; font:inherit; font-size:1.25rem; font-weight:700; color:var(--leaf);
-      background:transparent; border:1.5px solid var(--line); border-radius:6px; cursor:pointer; }
-    .stepper button:hover { border-color:var(--leaf); }
-    .total { display:flex; justify-content:space-between; padding-top:1rem; font-weight:700; }
-    .actions { display:flex; gap:.75rem; flex-wrap:wrap; }
-    .primary, .secondary { font:inherit; font-weight:700; padding:.8rem 1.4rem; border-radius:6px; cursor:pointer; }
-    .primary { background:var(--leaf); color:var(--paper); border:0; }
-    .primary:disabled { opacity:.6; cursor:wait; }
-    .secondary { background:transparent; color:var(--ink); border:1.5px solid var(--line); }
-    .error { color:var(--error); font-size:.95rem; margin:.35rem 0 0; min-height:1.2em; }
-    #summary { margin-top:2.5rem; padding:1.25rem; border:1.5px solid var(--leaf); border-radius:6px; }
-    #summary h2 { margin:0 0 .75rem; font-size:1.25rem; }
-    #summary table { width:100%; border-collapse:collapse; }
-    #summary td { padding:.35rem 0; }
-    #summary td:last-child { text-align:right; }
-    #summary tr.sum td { border-top:1px solid var(--line); font-weight:700; padding-top:.6rem; }
-    #summary .actions { margin-top:1.25rem; }
-    [hidden] { display:none !important; }
+    .stepper button { width:2.2rem; height:2.2rem; font-size:1.1rem; font-weight:700; color:var(--good); background:var(--card);
+      border:1px solid var(--line); border-radius:8px; cursor:pointer; }
+    .stepper button:hover { border-color:var(--good); }
+    .total { display:flex; justify-content:space-between; padding-top:.8rem; font-weight:700; }
+    .actions { display:flex; gap:.6rem; flex-wrap:wrap; }
+    #summary { margin-top:1rem; border-color:var(--good); }
+    #summary table { width:100%; border-collapse:collapse; margin-top:.4rem; }
+    #summary td { padding:.4rem 0; border-bottom:1px solid var(--line); }
+    #summary td:last-child { text-align:right; font-variant-numeric:tabular-nums; }
+    #summary tr.sum td { font-weight:700; border-bottom:0; }
+    #summary .actions { margin-top:1rem; }
   </style>
 </head>
 <body>
+  <nav class="rail" aria-label="Main">
+    <a href="dashboard.html" class="logo" aria-label="Stocktake home">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+    </a>
+    <a href="dashboard.html" aria-label="Dashboard" title="Dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </a>
+    <a href="index.html" aria-current="page" aria-label="New count" title="New count">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM12 11v6M9 14h6"/></svg>
+    </a>
+    <a href="review.html" aria-label="Review submissions" title="Review submissions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+    </a>
+    <span class="spacer"></span>
+    <a href="/.auth/logout" aria-label="Sign out" title="Sign out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg>
+    </a>
+  </nav>
+
   <main>
-    <h1 id="title">Stock Count</h1>
-    <p class="intro"><span id="description"></span> <a href="dashboard.html">View the dashboard</a> · <a href="review.html">Review submissions</a></p>
-
-    <form id="form" novalidate>
-      <div id="sections"><p>Loading form…</p></div>
-      <div class="actions">
-        <button type="submit" class="primary" id="submitBtn">Submit</button>
-        <button type="reset" class="secondary">Clear form</button>
+    <header class="page">
+      <div>
+        <div class="crumb">Stocktake · New count</div>
+        <h1 id="title">New count</h1><span class="period" id="description"></span>
+        <nav class="mobile-nav" aria-label="Pages"><a href="dashboard.html">Dashboard</a><a href="review.html">Review</a><a href="/.auth/logout">Sign out</a></nav>
       </div>
-      <p class="error" id="formError" role="alert"></p>
-    </form>
+    </header>
 
-    <section id="summary" hidden aria-live="polite">
-      <h2>Count saved</h2>
-      <p id="summaryName"></p>
-      <table><tbody id="summaryRows"></tbody></table>
-      <div class="actions">
-        <button type="button" class="primary" id="pdfBtn">Download PDF</button>
-      </div>
-    </section>
+    <div class="form-wrap">
+      <form id="form" novalidate>
+        <div id="sections"><div class="status">Loading form…</div></div>
+        <div class="actions">
+          <button type="submit" class="primary" id="submitBtn">Submit</button>
+          <button type="reset" class="secondary">Clear form</button>
+        </div>
+        <p class="error" id="formError" role="alert"></p>
+      </form>
+
+      <section id="summary" class="card" hidden aria-live="polite">
+        <h2>Count saved <em>✓</em></h2>
+        <p class="sub" id="summaryName"></p>
+        <table><tbody id="summaryRows"></tbody></table>
+        <div class="actions">
+          <button type="button" class="primary" id="pdfBtn">Download PDF</button>
+          <a class="secondary" href="review.html" style="text-decoration:none">Review submissions</a>
+        </div>
+      </section>
+    </div>
   </main>
 
   <script>

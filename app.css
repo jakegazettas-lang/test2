@@ -1,0 +1,67 @@
+/* Shared look for every page: colours, side rail, header, cards, buttons, inputs. */
+:root {
+  --bg:#EEF1EC; --card:#FFFFFF; --ink:#1B241B; --muted:#6B776A; --line:#E1E6DF; --track:#E6EBE4; --field:#FFFFFF;
+  --good:#2E8B4E; --good-soft:#BFE0C9; --bad:#D9534F; --bad-soft:#F5C6C4; --warn:#8A5A00; --warn-soft:#FBF1DC;
+  --tint:#F3F7F1; --rail:#0F2A18; --rail-ink:#A9C7B2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#111611; --card:#1A211A; --ink:#E6ECE4; --muted:#9BA89A; --line:#2B352B; --track:#2B352B; --field:#141A14;
+    --good:#5CC47E; --good-soft:#264A31; --bad:#F07A73; --bad-soft:#4A2826; --warn:#F2C94C; --warn-soft:#2E2712;
+    --tint:#1F2A20; --rail:#0A1A0F; --rail-ink:#8FB39A;
+  }
+}
+* { box-sizing:border-box; }
+html, body { margin:0; }
+body { background:var(--bg); color:var(--ink); font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:14px; line-height:1.45; display:flex; min-height:100vh; }
+a { color:var(--good); }
+button, input { font:inherit; color:inherit; }
+:focus-visible { outline:3px solid var(--good); outline-offset:2px; }
+[hidden] { display:none !important; }
+
+/* Side rail */
+.rail { width:56px; flex:0 0 56px; background:var(--rail); display:flex; flex-direction:column; align-items:center; gap:.4rem; padding:1rem 0; }
+.rail a { width:40px; height:40px; display:grid; place-items:center; border-radius:8px; color:var(--rail-ink); text-decoration:none; }
+.rail a:hover, .rail a[aria-current="page"] { background:rgba(255,255,255,.08); color:#fff; }
+.rail .logo { color:#5CC47E; margin-bottom:.6rem; }
+.rail .spacer { flex:1; }
+.rail svg { width:20px; height:20px; }
+
+/* Page */
+main { flex:1; min-width:0; padding:1.25rem 1.5rem 2rem; }
+header.page { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+.crumb { font-size:.75rem; color:var(--muted); }
+h1 { font-size:1.4rem; margin:0; display:inline-block; margin-right:.9rem; }
+.period { color:var(--muted); font-size:.8rem; }
+.controls { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
+.mobile-nav { display:none; gap:1rem; font-size:.8rem; font-weight:700; margin-top:.4rem; }
+@media (max-width:760px) { .mobile-nav { display:flex; } main { padding:1rem; } .rail { display:none; } }
+
+/* Cards */
+.card { background:var(--card); border-radius:10px; padding:1rem 1.1rem; border:1px solid var(--line); min-width:0; }
+.card h2 { font-size:1rem; margin:0; }
+.card h2 em { font-style:normal; color:var(--good); margin-left:.4rem; }
+.card .sub { color:var(--muted); font-size:.75rem; margin:.15rem 0 .6rem; }
+.card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; flex-wrap:wrap; }
+.status { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:1.25rem; }
+.empty { color:var(--muted); font-size:.8rem; padding:1rem 0; }
+.pos { color:var(--good); } .neg { color:var(--bad); }
+
+/* Toggles and buttons */
+.seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; background:var(--card); padding:2px; }
+.seg button { border:0; background:transparent; padding:.35rem .8rem; border-radius:6px; cursor:pointer; color:var(--muted); font-weight:700; font-size:.8rem; }
+.seg button[aria-pressed="true"] { background:var(--bg); color:var(--ink); box-shadow:inset 0 -2px 0 var(--good); }
+.primary, .secondary { font-weight:700; border-radius:8px; cursor:pointer; padding:.55rem 1.1rem; font-size:.85rem; }
+.primary { background:var(--good); color:#fff; border:1px solid var(--good); }
+.primary:disabled { opacity:.6; cursor:wait; }
+.secondary { background:var(--card); color:var(--ink); border:1px solid var(--line); }
+.secondary:hover { border-color:var(--muted); }
+.link { background:none; border:0; color:var(--good); font-weight:700; cursor:pointer; padding:.4rem .3rem; text-decoration:underline; font-size:.85rem; }
+
+/* Inputs */
+.field-label { display:block; font-weight:700; font-size:.8rem; margin-bottom:.3rem; }
+input[type="text"], input[type="number"], input[type="date"] { background:var(--field); border:1px solid var(--line); border-radius:8px; padding:.5rem .6rem; }
+input[type="text"]:focus, input[type="number"]:focus { border-color:var(--good); }
+.error { color:var(--bad); font-size:.8rem; margin:.35rem 0 0; min-height:1.1em; }
+.badge { display:inline-block; font-size:.7rem; font-weight:700; color:var(--warn); background:var(--warn-soft); padding:.1rem .45rem; border-radius:4px; }
