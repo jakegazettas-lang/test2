@@ -1,8 +1,5 @@
 {
   "platform": {
-    "apiRuntime": "node:20"
-  },
-  "mimeTypes": {
-    ".json": "application/json"
+    "apiRuntime": "node:22"
   }
 }
