@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Submissions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --paper:#FBFBF8; --ink:#1F2A1F; --muted:#5E6B5E; --leaf:#2F6B3A; --line:#CFD6CC; --field:#FFFFFF;
+      --error:#B3261E; --tint:#EEF4EC; --warn:#8A5A00; --warn-bg:#FBF1DC; }
+    @media (prefers-color-scheme: dark) {
+      :root { --paper:#161B16; --ink:#E8EDE6; --muted:#A3AFA2; --leaf:#7CC08A; --line:#3A453A; --field:#1E251E;
+        --error:#F2B8B5; --tint:#1F2A20; --warn:#F2C94C; --warn-bg:#2E2712; }
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink);
+      font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif; font-size:1.0625rem; line-height:1.5; }
+    main { max-width:64rem; margin:0 auto; padding:3rem 1.25rem 4rem; }
+    h1 { font-size:2.25rem; line-height:1.1; margin:0 0 .5rem; color:var(--leaf); }
+    .intro { color:var(--muted); margin:0 0 2rem; }
+    a { color:var(--leaf); font-weight:700; }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline:3px solid var(--leaf); outline-offset:2px; }
+    .status { padding:1.25rem; border:1.5px solid var(--line); border-radius:6px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; min-width:44rem; }
+    th, td { text-align:left; padding:.6rem .5rem; border-bottom:1px solid var(--line); vertical-align:middle; }
+    th { font-weight:700; white-space:nowrap; }
+    .num { text-align:right; font-variant-numeric:tabular-nums; }
+    .sub { display:block; color:var(--muted); font-size:.85rem; }
+    .badge { display:inline-block; font-size:.8rem; font-weight:700; color:var(--warn); background:var(--warn-bg);
+      padding:.1rem .45rem; border-radius:4px; margin-left:.5rem; }
+    .row-actions { display:flex; gap:.4rem; justify-content:flex-end; white-space:nowrap; }
+    button { font:inherit; font-weight:700; border-radius:6px; cursor:pointer; padding:.45rem .8rem; }
+    .primary { background:var(--leaf); color:var(--paper); border:0; }
+    .primary:disabled { opacity:.6; cursor:wait; }
+    .secondary { background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+    .link { background:none; border:0; color:var(--leaf); padding:.45rem .3rem; text-decoration:underline; }
+    tr.editing td { background:var(--tint); }
+    td input[type="number"] { width:5.5rem; text-align:right; font:inherit; color:var(--ink); background:var(--field);
+      border:1.5px solid var(--line); border-radius:6px; padding:.4rem .5rem; }
+    .panel td { background:var(--tint); padding:1rem; }
+    .panel-grid { display:grid; grid-template-columns:1fr 2fr; gap:1rem; max-width:40rem; }
+    @media (max-width:560px) { .panel-grid { grid-template-columns:1fr; } }
+    .panel label { display:block; font-weight:700; margin-bottom:.3rem; font-size:.95rem; }
+    .panel input[type="text"] { width:100%; font:inherit; color:var(--ink); background:var(--field);
+      border:1.5px solid var(--line); border-radius:6px; padding:.5rem .6rem; }
+    .panel .buttons { display:flex; gap:.5rem; margin-top:1rem; }
+    .error { color:var(--error); font-size:.95rem; margin:.5rem 0 0; }
+    .history { margin:0; padding:0; list-style:none; }
+    .history li { padding:.5rem 0; border-bottom:1px solid var(--line); }
+    .history li:last-child { border-bottom:0; }
+    .history .when { font-weight:700; }
+    .toolbar { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+    [hidden] { display:none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Review Submissions</h1>
+    <p class="intro">Check past counts and correct any that were recounted. Every change is kept in the history.
+      <a href="dashboard.html">Dashboard</a> · <a href="index.html">New count</a></p>
+
+    <div id="status" class="status" aria-live="polite">Loading submissions…</div>
+
+    <div id="content" hidden>
+      <div class="toolbar">
+        <span id="summary" class="sub"></span>
+        <button type="button" class="secondary" id="refresh">Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="head"></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); kids.forEach(k => k != null && n.append(k)); return n; };
+    const fmtDate = d => new Date(d).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' });
+    let items = [], nameFields = [], counts = [], signedInName = '', openPanel = null;
+
+    async function init() {
+      try {
+        const cfg = await (await fetch('form.json', { cache:'no-store' })).json();
+        const fields = cfg.sections.flatMap(s => s.fields);
+        items = fields.filter(f => f.type === 'integer');
+        nameFields = fields.filter(f => f.type === 'text');
+      } catch {
+        showStatus('The form settings could not be loaded. Check that form.json is in the repository.');
+        return;
+      }
+      try {
+        const me = await (await fetch('/.auth/me')).json();
+        signedInName = me?.clientPrincipal?.userDetails || '';
+      } catch {}
+      load();
+    }
+
+    function showStatus(msg) {
+      const s = document.getElementById('status');
+      s.hidden = false; s.textContent = msg;
+      document.getElementById('content').hidden = true;
+    }
+
+    async function load() {
+      showStatus('Loading submissions…');
+      try {
+        const res = await fetch('/api/counts');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Submissions could not be loaded. Try again.');
+        counts = data;
+        if (!counts.length) {
+          document.getElementById('status').innerHTML = 'No submissions yet. <a href="index.html">Enter the first count</a>.';
+          return;
+        }
+        document.getElementById('status').hidden = true;
+        document.getElementById('content').hidden = false;
+        render();
+      } catch (err) { showStatus(err.message); }
+    }
+
+    const who = r => nameFields.map(f => r[f.id]).join(' ');
+    const total = r => items.reduce((s, f) => s + (r[f.id] ?? 0), 0);
+
+    function render() {
+      openPanel = null;
+      const edited = counts.filter(c => c.updatedAt).length;
+      document.getElementById('summary').textContent =
+        `${counts.length} submission${counts.length === 1 ? '' : 's'}${edited ? `, ${edited} recounted` : ''}`;
+
+      const head = document.getElementById('head');
+      head.innerHTML = '';
+      head.append(el('tr', {},
+        el('th', { textContent:'Counted' }), el('th', { textContent:'By' }),
+        ...items.map(f => el('th', { className:'num', textContent:f.label })),
+        el('th', { className:'num', textContent:'Total' }), el('th', {})));
+
+      const rows = document.getElementById('rows');
+      rows.innerHTML = '';
+      counts.forEach(c => rows.append(viewRow(c)));
+    }
+
+    function viewRow(c) {
+      const byCell = el('td', {}, who(c));
+      if (c.updatedAt) byCell.append(el('span', { className:'badge', textContent:'Recounted' }));
+      const tr = el('tr', {},
+        el('td', {}, fmtDate(c.submittedAt),
+          c.updatedAt ? el('span', { className:'sub', textContent:`Edited ${fmtDate(c.updatedAt)} by ${c.updatedBy}` }) : null),
+        byCell,
+        ...items.map(f => el('td', { className:'num', textContent:c[f.id] ?? 0 })),
+        el('td', { className:'num', textContent:total(c) }),
+        el('td', {}, el('div', { className:'row-actions' },
+          el('button', { type:'button', className:'link', textContent:'History', onclick:() => showHistory(c, tr) }),
+          el('button', { type:'button', className:'secondary', textContent:'Edit', onclick:() => startEdit(c, tr),
+            ariaLabel:`Edit count from ${fmtDate(c.submittedAt)} by ${who(c)}` }))));
+      tr.dataset.id = c.id;
+      return tr;
+    }
+
+    function closePanel() {
+      if (!openPanel) return;
+      const { row, panel, count } = openPanel;
+      panel.remove();
+      row.replaceWith(viewRow(count));
+      openPanel = null;
+    }
+
+    function startEdit(c, tr) {
+      closePanel();
+      const inputs = {};
+      const editRow = el('tr', { className:'editing' },
+        el('td', {}, fmtDate(c.submittedAt)),
+        el('td', {}, who(c)),
+        ...items.map(f => {
+          const input = el('input', { type:'number', min:f.min ?? 0, step:1, inputMode:'numeric', value:c[f.id] ?? 0,
+            ariaLabel:`${f.label} recount` });
+          if (f.max != null) input.max = f.max;
+          inputs[f.id] = input;
+          return el('td', { className:'num' }, input);
+        }),
+        el('td', { className:'num', textContent:'' }),
+        el('td', {}));
+      const totalCell = editRow.children[2 + items.length];
+      const updateTotal = () => totalCell.textContent = items.reduce((s, f) => s + (parseInt(inputs[f.id].value, 10) || 0), 0);
+      Object.values(inputs).forEach(i => i.addEventListener('input', updateTotal));
+      updateTotal();
+
+      const byInput = el('input', { type:'text', id:'recountBy', maxLength:100, value:signedInName, autocomplete:'name' });
+      if (signedInName) byInput.readOnly = true;
+      const noteInput = el('input', { type:'text', id:'recountNote', maxLength:200, placeholder:'Recount' });
+      const error = el('p', { className:'error', role:'alert' });
+      const saveBtn = el('button', { type:'button', className:'primary', textContent:'Save recount' });
+      [...Object.values(inputs), byInput, noteInput].forEach(i => i.addEventListener('input', () => error.textContent = ''));
+      const cancelBtn = el('button', { type:'button', className:'secondary', textContent:'Cancel', onclick:closePanel });
+
+      const panel = el('tr', { className:'panel' }, el('td', { colSpan: 4 + items.length },
+        el('div', { className:'panel-grid' },
+          el('div', {}, el('label', { htmlFor:'recountBy', textContent:'Recounted by' }), byInput),
+          el('div', {}, el('label', { htmlFor:'recountNote', textContent:'Reason (optional)' }), noteInput)),
+        error,
+        el('div', { className:'buttons' }, saveBtn, cancelBtn)));
+
+      saveBtn.onclick = async () => {
+        error.textContent = '';
+        const payload = { version:c.version, updatedBy:byInput.value.trim(), note:noteInput.value.trim() };
+        for (const f of items) {
+          const n = Number(inputs[f.id].value);
+          if (!Number.isInteger(n) || n < (f.min ?? 0) || (f.max != null && n > f.max)) {
+            error.textContent = `${f.label} must be a whole number of ${f.min ?? 0} or more.`;
+            inputs[f.id].focus(); return;
+          }
+          payload[f.id] = n;
+        }
+        if (!payload.updatedBy) { error.textContent = 'Enter who did the recount.'; byInput.focus(); return; }
+        if (items.every(f => payload[f.id] === (c[f.id] ?? 0))) { error.textContent = 'No quantities have changed.'; return; }
+
+        saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+        try {
+          const res = await fetch(`/api/counts/${c.id}`, {
+            method:'PUT', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(payload) });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'The recount could not be saved. Try again.');
+          const i = counts.findIndex(x => x.id === c.id);
+          counts[i] = data;
+          openPanel.count = data;
+          closePanel();
+          render();
+        } catch (err) {
+          error.textContent = err.message;
+          saveBtn.disabled = false; saveBtn.textContent = 'Save recount';
+        }
+      };
+
+      tr.replaceWith(editRow);
+      editRow.after(panel);
+      openPanel = { row:editRow, panel, count:c };
+      inputs[items[0].id].focus();
+    }
+
+    async function showHistory(c, tr) {
+      closePanel();
+      const list = el('ul', { className:'history' }, el('li', { textContent:'Loading history…' }));
+      const panel = el('tr', { className:'panel' }, el('td', { colSpan: 4 + items.length },
+        list, el('div', { className:'buttons' }, el('button', { type:'button', className:'secondary', textContent:'Close', onclick:closePanel }))));
+      const row = document.querySelector(`tr[data-id="${c.id}"]`) || tr;
+      row.after(panel);
+      openPanel = { row, panel, count:c };
+      try {
+        const res = await fetch(`/api/counts/${c.id}/history`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'History could not be loaded.');
+        list.innerHTML = '';
+        data.forEach((v, i) => {
+          const isOriginal = i === data.length - 1;
+          const label = i === 0 ? 'Current' : isOriginal ? 'Original count' : 'Earlier version';
+          const whoText = isOriginal ? `by ${who(c)}` : `by ${v.updatedBy}${v.editNote ? ` · ${v.editNote}` : ''}`;
+          list.append(el('li', {},
+            el('span', { className:'when', textContent:`${label}: ` }),
+            items.map(f => `${f.label} ${v[f.id]}`).join(', '),
+            el('span', { className:'sub', textContent:`${fmtDate(isOriginal ? c.submittedAt : v.validFrom)} ${whoText}` })));
+        });
+      } catch (err) {
+        list.innerHTML = '';
+        list.append(el('li', { className:'error', textContent:err.message }));
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', load);
+    init();
+  </script>
+</body>
+</html>
