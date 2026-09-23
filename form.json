@@ -1,0 +1,47 @@
+{
+  "formId": "stock-count",
+  "title": "Stock Count",
+  "description": "Enter your name and the quantity on hand for each item.",
+  "submitLabel": "Submit count",
+  "submission": {
+    "method": "POST",
+    "endpoint": "/api/submit"
+  },
+  "sections": [
+    {
+      "id": "details",
+      "title": "Your details",
+      "layout": "two-column",
+      "fields": [
+        {
+          "id": "firstName",
+          "label": "First name",
+          "type": "text",
+          "required": true,
+          "maxLength": 100,
+          "autocomplete": "given-name",
+          "errorMessage": "Enter your first name."
+        },
+        {
+          "id": "lastName",
+          "label": "Last name",
+          "type": "text",
+          "required": true,
+          "maxLength": 100,
+          "autocomplete": "family-name",
+          "errorMessage": "Enter your last name."
+        }
+      ]
+    },
+    {
+      "id": "stock",
+      "title": "Stock count",
+      "fields": [
+        { "id": "apples",   "label": "Apples",   "type": "integer", "default": 0, "min": 0, "max": 1000000, "color": "#D2483A" },
+        { "id": "bananas",  "label": "Bananas",  "type": "integer", "default": 0, "min": 0, "max": 1000000, "color": "#D9A400" },
+        { "id": "sultanas", "label": "Sultanas", "type": "integer", "default": 0, "min": 0, "max": 1000000, "color": "#8A63B0" }
+      ],
+      "total": { "label": "Total items" }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "stock-count-api",
+  "version": "1.0.0",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "build": "echo \"No build step needed\""
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0",
+    "mssql": "^11.0.1"
+  }
+}
