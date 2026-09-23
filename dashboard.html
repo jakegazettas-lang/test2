@@ -9,145 +9,423 @@
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
-    :root { --paper:#FBFBF8; --ink:#1F2A1F; --muted:#5E6B5E; --leaf:#2F6B3A; --line:#CFD6CC; }
-    @media (prefers-color-scheme: dark) { :root { --paper:#161B16; --ink:#E8EDE6; --muted:#A3AFA2; --leaf:#7CC08A; --line:#3A453A; } }
+    :root {
+      --bg:#EEF1EC; --card:#FFFFFF; --ink:#1B241B; --muted:#6B776A; --line:#E1E6DF; --track:#E6EBE4;
+      --good:#2E8B4E; --good-soft:#BFE0C9; --bad:#D9534F; --bad-soft:#F5C6C4; --rail:#0F2A18; --rail-ink:#A9C7B2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:#111611; --card:#1A211A; --ink:#E6ECE4; --muted:#9BA89A; --line:#2B352B; --track:#2B352B;
+        --good:#5CC47E; --good-soft:#264A31; --bad:#F07A73; --bad-soft:#4A2826; --rail:#0A1A0F; --rail-ink:#8FB39A;
+      }
+    }
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--paper); color:var(--ink);
-      font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif; font-size:1.0625rem; line-height:1.5; }
-    main { max-width:60rem; margin:0 auto; padding:3rem 1.25rem 4rem; }
-    h1 { font-size:2.25rem; line-height:1.1; margin:0 0 .5rem; color:var(--leaf); }
-    h2 { font-size:1.25rem; margin:0 0 1rem; }
-    .intro { color:var(--muted); margin:0 0 2.5rem; }
-    a { color:var(--leaf); font-weight:700; }
-    a:focus-visible, button:focus-visible { outline:3px solid var(--leaf); outline-offset:2px; }
-    .latest { display:grid; grid-template-columns:repeat(auto-fit, minmax(10rem, 1fr)); gap:1rem; margin-bottom:1rem; }
-    .stat { border-left:5px solid var(--c); padding:.25rem 0 .25rem 1rem; }
-    .stat .n { font-size:2.5rem; font-weight:700; line-height:1.1; }
-    .stat .l { color:var(--muted); }
-    .meta { color:var(--muted); margin:0 0 3rem; font-size:.95rem; }
-    section { margin-bottom:3rem; }
-    .chart-box { position:relative; height:320px; }
-    .table-wrap { overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; min-width:32rem; }
-    th, td { text-align:left; padding:.55rem .5rem; border-bottom:1px solid var(--line); }
-    .num { text-align:right; font-variant-numeric:tabular-nums; }
-    .status { padding:1.25rem; border:1.5px solid var(--line); border-radius:6px; }
-    .refresh { font:inherit; font-weight:700; color:var(--ink); background:transparent;
-      border:1.5px solid var(--line); border-radius:6px; padding:.55rem 1rem; cursor:pointer; }
+    html, body { margin:0; }
+    body { background:var(--bg); color:var(--ink); font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size:14px; line-height:1.4; display:flex; min-height:100vh; }
+    a { color:inherit; }
+    button, input { font:inherit; color:inherit; }
+    :focus-visible { outline:3px solid var(--good); outline-offset:2px; }
+
+    .rail { width:56px; flex:0 0 56px; background:var(--rail); display:flex; flex-direction:column; align-items:center; gap:.4rem; padding:1rem 0; }
+    .rail a { width:40px; height:40px; display:grid; place-items:center; border-radius:8px; color:var(--rail-ink); text-decoration:none; }
+    .rail a:hover, .rail a[aria-current="page"] { background:rgba(255,255,255,.08); color:#fff; }
+    .rail .logo { color:#5CC47E; margin-bottom:.6rem; }
+    .rail .spacer { flex:1; }
+    .rail svg { width:20px; height:20px; }
+
+    main { flex:1; min-width:0; padding:1.25rem 1.5rem 2rem; }
+    header { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .crumb { font-size:.75rem; color:var(--muted); }
+    h1 { font-size:1.4rem; margin:0; display:inline-block; margin-right:.9rem; }
+    .period { color:var(--muted); font-size:.8rem; }
+    .controls { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
+    .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; background:var(--card); padding:2px; }
+    .seg button { border:0; background:transparent; padding:.35rem .8rem; border-radius:6px; cursor:pointer; color:var(--muted); font-weight:700; font-size:.8rem; }
+    .seg button[aria-pressed="true"] { background:var(--bg); color:var(--ink); box-shadow:inset 0 -2px 0 var(--good); }
+    .dates { display:flex; gap:.4rem; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.2rem .5rem; }
+    .dates input { border:0; background:transparent; font-size:.8rem; padding:.2rem; }
+    .dates span { color:var(--muted); }
+
+    .grid { display:grid; gap:1rem; }
+    .kpis { grid-template-columns:repeat(4, minmax(0,1fr)); margin-bottom:1rem; }
+    .two { grid-template-columns:repeat(2, minmax(0,1fr)); margin-bottom:1rem; }
+    @media (max-width:1100px) { .kpis { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+    @media (max-width:760px) { .kpis, .two { grid-template-columns:1fr; } main { padding:1rem; } .rail { display:none; } }
+
+    .card { background:var(--card); border-radius:10px; padding:1rem 1.1rem; border:1px solid var(--line); min-width:0; }
+    .card h2 { font-size:1rem; margin:0; }
+    .card h2 em { font-style:normal; color:var(--good); margin-left:.4rem; }
+    .card .sub { color:var(--muted); font-size:.75rem; margin:.15rem 0 .6rem; }
+    .card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; flex-wrap:wrap; }
+
+    .kpi-top { display:flex; justify-content:space-between; align-items:flex-start; }
+    .kpi-label { font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+    .kpi-value { font-size:2rem; font-weight:700; line-height:1.1; margin-top:.2rem; }
+    .kpi-value small { font-size:.85rem; color:var(--muted); font-weight:400; margin-left:.2rem; }
+    .kpi-rows { margin-top:.5rem; display:grid; grid-template-columns:auto 1fr auto; gap:.15rem .6rem; font-size:.75rem; }
+    .kpi-rows .k { color:var(--muted); }
+    .kpi-rows .v { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .kpi-rows .d { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
+    .pos { color:var(--good); } .neg { color:var(--bad); }
+    .ring { width:58px; height:58px; flex:0 0 58px; }
+    .ring text { font-size:12px; font-weight:700; fill:var(--ink); }
+    .split { margin-top:.8rem; }
+    .split .labels { display:flex; justify-content:space-between; font-size:.72rem; margin-bottom:.25rem; }
+    .split .bar { display:flex; height:7px; border-radius:4px; overflow:hidden; background:var(--track); }
+    .split .bar span:first-child { background:var(--good); }
+    .split .bar span:last-child { background:var(--bad-soft); }
+    .spark { margin-top:.7rem; height:38px; width:100%; }
+    .dots { display:flex; justify-content:space-around; margin-top:.8rem; gap:.3rem; }
+    .dot { text-align:center; font-size:.65rem; color:var(--muted); min-width:0; }
+    .dot i { display:block; width:14px; height:14px; border-radius:50%; margin:0 auto .2rem; }
+    .dot b { display:block; color:var(--ink); font-size:.7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:4.5rem; }
+
+    .chart-box { position:relative; height:250px; }
+    .legend { display:flex; gap:1rem; font-size:.72rem; color:var(--muted); margin-bottom:.3rem; flex-wrap:wrap; }
+    .legend i { display:inline-block; width:14px; height:0; border-top:2px solid; vertical-align:middle; margin-right:.3rem; }
+
+    .rank { width:100%; border-collapse:collapse; font-size:.8rem; }
+    .rank th { font-size:.68rem; color:var(--muted); font-weight:400; text-align:left; padding:0 .4rem .4rem; }
+    .rank td { padding:.45rem .4rem; white-space:nowrap; }
+    .rank td.name { max-width:10rem; overflow:hidden; text-overflow:ellipsis; }
+    .rank td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .rank td.i { color:var(--muted); width:1.2rem; text-align:right; }
+    .rank td.barcell { width:45%; }
+    .bullet { position:relative; height:10px; background:var(--track); border-radius:2px; }
+    .bullet span { position:absolute; left:0; top:1px; bottom:1px; border-radius:2px; }
+    .bullet b { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--ink); }
+    .rank td.pct { font-weight:700; font-size:.75rem; text-align:right; width:3.5rem; }
+
+    .status { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:1.25rem; }
+    .empty { color:var(--muted); font-size:.8rem; padding:1rem 0; }
+    .mobile-nav { display:none; gap:1rem; font-size:.8rem; font-weight:700; margin-top:.4rem; }
+    .mobile-nav a { color:var(--good); }
+    @media (max-width:760px) { .mobile-nav { display:flex; } }
     [hidden] { display:none !important; }
   </style>
 </head>
 <body>
-  <main>
-    <h1>Stock Dashboard</h1>
-    <p class="intro">Latest stock on hand and how counts have changed over time. <a href="index.html">Enter a new count</a> · <a href="review.html">Review and edit submissions</a></p>
+  <nav class="rail" aria-label="Main">
+    <a href="dashboard.html" class="logo" aria-label="Dashboard home">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+    </a>
+    <a href="dashboard.html" aria-current="page" aria-label="Dashboard" title="Dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </a>
+    <a href="index.html" aria-label="New count" title="New count">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM12 11v6M9 14h6"/></svg>
+    </a>
+    <a href="review.html" aria-label="Review submissions" title="Review submissions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+    </a>
+    <span class="spacer"></span>
+    <a href="/.auth/logout" aria-label="Sign out" title="Sign out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg>
+    </a>
+  </nav>
 
-    <div id="status" class="status" aria-live="polite">Loading counts…</div>
+  <main>
+    <header>
+      <div>
+        <div class="crumb">Stocktake · Dashboard</div>
+        <h1>Stock</h1><span class="period" id="period"></span>
+        <nav class="mobile-nav" aria-label="Pages"><a href="index.html">New count</a><a href="review.html">Review</a><a href="/.auth/logout">Sign out</a></nav>
+      </div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Compare against">
+          <button type="button" data-compare="par" aria-pressed="true">Par level</button>
+          <button type="button" data-compare="prev" aria-pressed="false">Previous count</button>
+        </div>
+        <div class="dates">
+          <input type="date" id="from" aria-label="From date"><span>–</span><input type="date" id="to" aria-label="To date">
+        </div>
+      </div>
+    </header>
+
+    <div id="status" class="status" aria-live="polite">Loading dashboard…</div>
 
     <div id="content" hidden>
-      <div class="latest" id="latest"></div>
-      <p class="meta" id="latestMeta"></p>
-
-      <section>
-        <h2>Stock over time</h2>
-        <div class="chart-box"><canvas id="trendChart" aria-label="Line chart of stock counts over time"></canvas></div>
+      <section class="grid kpis" aria-label="Summary">
+        <article class="card" id="kpiStock"></article>
+        <article class="card" id="kpiItems"></article>
+        <article class="card" id="kpiAccuracy"></article>
+        <article class="card" id="kpiCounters"></article>
       </section>
 
-      <section>
-        <h2>Counts by person</h2>
-        <div class="chart-box"><canvas id="personChart" aria-label="Bar chart of counts submitted by each person"></canvas></div>
+      <section class="grid two">
+        <article class="card">
+          <div class="card-head">
+            <div><h2 id="trendTitle">Is stock holding up?</h2><p class="sub" id="trendSub">Total units per count against the combined par level</p></div>
+            <div class="seg" role="group" aria-label="Trend view">
+              <button type="button" data-trend="total" aria-pressed="true">Total</button>
+              <button type="button" data-trend="items" aria-pressed="false">By item</button>
+            </div>
+          </div>
+          <div class="legend" id="trendLegend"></div>
+          <div class="chart-box"><canvas id="trendChart" aria-label="Line chart of stock over time"></canvas></div>
+        </article>
+        <article class="card">
+          <h2>Which counts moved most?</h2>
+          <p class="sub">Change in total units compared with the count before</p>
+          <div class="chart-box"><canvas id="deltaChart" aria-label="Bar chart of change between counts"></canvas></div>
+        </article>
       </section>
 
-      <section>
-        <h2>All submissions</h2>
-        <div class="table-wrap"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div>
+      <section class="grid two">
+        <article class="card">
+          <div class="card-head">
+            <div><h2 id="itemsTitle">Which items fall short of par?</h2><p class="sub" id="itemsSub"></p></div>
+            <div class="seg" role="group" aria-label="Item ranking">
+              <button type="button" data-items="bottom" aria-pressed="true">Bottom</button>
+              <button type="button" data-items="top" aria-pressed="false">Top</button>
+            </div>
+          </div>
+          <table class="rank" id="itemsTable"></table>
+        </article>
+        <article class="card">
+          <div class="card-head">
+            <div><h2>Who is counting?</h2><p class="sub">Counts submitted in the period · bar shows share of all counts</p></div>
+            <div class="seg" role="group" aria-label="Counter ranking">
+              <button type="button" data-people="most" aria-pressed="true">Most</button>
+              <button type="button" data-people="least" aria-pressed="false">Least</button>
+            </div>
+          </div>
+          <table class="rank" id="peopleTable"></table>
+        </article>
       </section>
-
-      <button class="refresh" id="refresh" type="button">Refresh data</button>
     </div>
   </main>
 
   <script>
-    // Item names and colours come from form.json, data from /api/counts.
+    const state = { compare:'par', trend:'total', items:'bottom', people:'most' };
+    let items = [], nameFields = [], all = [], charts = {};
     const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-    const fmtDate = d => new Date(d).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' });
-    const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); kids.forEach(k => n.append(k)); return n; };
-    let items = [], nameFields = [], charts = [];
+    const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); kids.forEach(k => k != null && n.append(k)); return n; };
+    const fmtDate = d => new Date(d).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+    const fmtShort = d => new Date(d).toLocaleDateString(undefined, { day:'numeric', month:'short' });
+    const isoDay = d => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0,10); };
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    const who = r => nameFields.map(f => r[f.id]).join(' ');
+    const total = r => items.reduce((s, f) => s + (r[f.id] ?? 0), 0);
+    const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+    const signed = n => (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n);
 
-    async function load() {
-      const status = document.getElementById('status'), content = document.getElementById('content');
-      status.hidden = false; status.textContent = 'Loading counts…';
+    function ring(p) {
+      const r = 24, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, p));
+      const color = p >= 100 ? css('--good') : p >= 80 ? css('--good') : css('--bad');
+      return `<svg class="ring" viewBox="0 0 58 58" role="img" aria-label="${p}%"><circle cx="29" cy="29" r="${r}" fill="none" stroke="${css('--track')}" stroke-width="5"/>
+        ${v > 0 ? `<circle cx="29" cy="29" r="${r}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c * v / 100} ${c}" transform="rotate(-90 29 29)"/>` : ''}
+        <text x="29" y="29" text-anchor="middle" dominant-baseline="central">${p}%</text></svg>`;
+    }
+    function spark(values) {
+      if (values.length < 2) return '';
+      const w = 200, h = 38, max = Math.max(...values), min = Math.min(...values), span = max - min || 1;
+      const pts = values.map((v, i) => [i / (values.length - 1) * (w - 6) + 3, h - 4 - (v - min) / span * (h - 8)]);
+      const last = pts[pts.length - 1];
+      return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${css('--muted')}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+        <circle cx="${last[0]}" cy="${last[1]}" r="3" fill="${css('--ink')}"/></svg>`;
+    }
+    const deltaSpan = (d, base) => `<span class="${d >= 0 ? 'pos' : 'neg'}">${signed(d)}${base ? ` · ${signed(pct(d, base))}%` : ''}</span>`;
+
+    async function init() {
       try {
-        if (!items.length) {
-          const cfg = await (await fetch('form.json', { cache:'no-store' })).json();
-          const fields = cfg.sections.flatMap(s => s.fields);
-          items = fields.filter(f => f.type === 'integer');
-          nameFields = fields.filter(f => f.type === 'text');
-        }
+        const cfg = await (await fetch('form.json', { cache:'no-store' })).json();
+        const fields = cfg.sections.flatMap(s => s.fields);
+        items = fields.filter(f => f.type === 'integer');
+        nameFields = fields.filter(f => f.type === 'text');
         const res = await fetch('/api/counts');
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Counts could not be loaded. Try again.');
-        if (!data.length) {
-          status.innerHTML = 'No counts yet. <a href="index.html">Enter the first count</a> and it will appear here.';
-          content.hidden = true; return;
+        all = data.slice().sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+        if (!all.length) {
+          document.getElementById('status').innerHTML = 'No counts yet. <a href="index.html">Enter the first count</a> and the dashboard will fill in.';
+          return;
         }
-        status.hidden = true; content.hidden = false;
-        render(data);
+        items.forEach(f => { if (!f.par) f.par = Math.max(1, Math.round(all.reduce((s, r) => s + (r[f.id] ?? 0), 0) / all.length)); });
+        document.getElementById('from').value = isoDay(all[0].submittedAt);
+        document.getElementById('to').value = isoDay(new Date());
+        document.getElementById('status').hidden = true;
+        document.getElementById('content').hidden = false;
+        render();
       } catch (err) {
-        status.textContent = err.message || 'Something went wrong loading the dashboard.';
-        content.hidden = true;
+        document.getElementById('status').textContent = err.message || 'The dashboard could not be loaded.';
       }
     }
 
-    const who = r => nameFields.map(f => r[f.id]).join(' ');
+    function inRange() {
+      const from = document.getElementById('from').value, to = document.getElementById('to').value;
+      return all.filter(r => { const d = isoDay(r.submittedAt); return (!from || d >= from) && (!to || d <= to); });
+    }
 
-    function render(data) {
-      const latest = data[0];
-      const latestBox = document.getElementById('latest');
-      latestBox.innerHTML = '';
-      items.forEach(f => {
-        const s = el('div', { className:'stat' }, el('div', { className:'n', textContent:latest[f.id] ?? 0 }), el('div', { className:'l', textContent:f.label }));
-        s.style.setProperty('--c', f.color || css('--leaf'));
-        latestBox.append(s);
-      });
-      document.getElementById('latestMeta').textContent = `Latest count by ${who(latest)} on ${fmtDate(latest.submittedAt)}`;
-
-      const head = document.getElementById('head');
-      head.innerHTML = '';
-      head.append(el('tr', {}, el('th', { textContent:'Date' }), el('th', { textContent:'Counted by' }),
-        ...items.map(f => el('th', { className:'num', textContent:f.label }))));
-      const rows = document.getElementById('rows');
-      rows.innerHTML = '';
-      data.forEach(r => rows.append(el('tr', {}, el('td', { textContent:fmtDate(r.submittedAt) }), el('td', { textContent:who(r) }),
-        ...items.map(f => el('td', { className:'num', textContent:r[f.id] ?? 0 })))));
-
-      charts.forEach(c => c.destroy()); charts = [];
+    function render() {
+      const rows = inRange();
+      const from = document.getElementById('from').value, to = document.getElementById('to').value;
+      document.getElementById('period').textContent = rows.length
+        ? `Counts ${fmtDate(from || rows[0].submittedAt)} – ${fmtDate(to || rows[rows.length - 1].submittedAt)} · ${rows.length} count${rows.length === 1 ? '' : 's'}`
+        : 'No counts in this period';
+      Object.values(charts).forEach(c => c.destroy()); charts = {};
+      if (!rows.length) {
+        ['kpiStock','kpiItems','kpiAccuracy','kpiCounters'].forEach(id => document.getElementById(id).innerHTML = '<p class="empty">No counts in this period.</p>');
+        ['itemsTable','peopleTable'].forEach(id => document.getElementById(id).innerHTML = '<tr><td class="empty">No counts in this period.</td></tr>');
+        return;
+      }
       Chart.defaults.font.family = '"Atkinson Hyperlegible", system-ui, sans-serif';
+      Chart.defaults.font.size = 11;
       Chart.defaults.color = css('--muted');
       Chart.defaults.borderColor = css('--line');
 
-      const oldest = [...data].reverse();
-      charts.push(new Chart(document.getElementById('trendChart'), {
-        type:'line',
-        data: { labels: oldest.map(r => fmtDate(r.submittedAt)),
-          datasets: items.map(f => ({ label:f.label, data:oldest.map(r => r[f.id] ?? 0), borderColor:f.color, backgroundColor:f.color, tension:.25, pointRadius:3, borderWidth:2.5 })) },
-        options: { maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
-          scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } }, x:{ ticks:{ maxTicksLimit:8 } } },
-          plugins:{ legend:{ labels:{ color:css('--ink') } } } }
-      }));
+      const latest = rows[rows.length - 1], prev = rows[rows.length - 2] || null;
+      const parTotal = items.reduce((s, f) => s + f.par, 0);
+      const base = f => state.compare === 'par' ? f.par : (prev ? (prev[f.id] ?? 0) : f.par);
+      const cmpName = state.compare === 'par' ? 'par' : 'previous count';
 
-      const per = {};
-      data.forEach(r => { const n = who(r); per[n] = (per[n] || 0) + 1; });
-      const people = Object.entries(per).sort((a, b) => b[1] - a[1]);
-      charts.push(new Chart(document.getElementById('personChart'), {
+      // KPI 1 — stock on hand
+      const t = total(latest), tp = prev ? total(prev) : null;
+      document.getElementById('kpiStock').innerHTML = `
+        <div class="kpi-top"><div><div class="kpi-label">Stock on hand</div><div class="kpi-value">${t}<small>units</small></div></div>${ring(pct(t, parTotal))}</div>
+        <div class="kpi-rows">
+          <span class="k">vs par</span><span class="v">${parTotal}</span><span class="d">${deltaSpan(t - parTotal, parTotal)}</span>
+          <span class="k">vs previous</span><span class="v">${tp ?? '—'}</span><span class="d">${tp == null ? '' : deltaSpan(t - tp, tp)}</span>
+        </div>${spark(rows.map(total))}`;
+
+      // KPI 2 — items on target
+      const scored = items.map(f => ({ f, qty:latest[f.id] ?? 0, base:base(f) })).map(x => ({ ...x, p:x.base ? pct(x.qty, x.base) : 100 }));
+      const onTarget = scored.filter(x => x.p >= 100).length;
+      const sorted = scored.slice().sort((a, b) => b.p - a.p);
+      document.getElementById('kpiItems').innerHTML = `
+        <div class="kpi-top"><div><div class="kpi-label">Items at ${state.compare === 'par' ? 'par' : 'or above last count'}</div><div class="kpi-value">${onTarget}<small>of ${items.length}</small></div></div>${ring(pct(onTarget, items.length))}</div>
+        <div class="kpi-rows">
+          <span class="k">best</span><span class="v">${sorted[0].f.label}</span><span class="d pos">${sorted[0].p}%</span>
+          <span class="k">worst</span><span class="v">${sorted[sorted.length - 1].f.label}</span><span class="d ${sorted[sorted.length - 1].p >= 100 ? 'pos' : 'neg'}">${sorted[sorted.length - 1].p}%</span>
+        </div>
+        <div class="split"><div class="labels"><span class="pos">${onTarget} on target</span><span class="neg">${items.length - onTarget} below</span></div>
+        <div class="bar"><span style="width:${pct(onTarget, items.length)}%"></span><span style="flex:1"></span></div></div>`;
+
+      // KPI 3 — count accuracy
+      const recounted = rows.filter(r => r.updatedAt).length, accurate = rows.length - recounted;
+      document.getElementById('kpiAccuracy').innerHTML = `
+        <div class="kpi-top"><div><div class="kpi-label">Count accuracy</div><div class="kpi-value">${accurate}<small>of ${rows.length} right first time</small></div></div>${ring(pct(accurate, rows.length))}</div>
+        <div class="kpi-rows">
+          <span class="k">recounted</span><span class="v">${recounted} count${recounted === 1 ? '' : 's'}</span><span class="d ${recounted ? 'neg' : 'pos'}">${pct(recounted, rows.length)}%</span>
+          <span class="k">last count</span><span class="v">${fmtDate(latest.submittedAt)}</span><span class="d"></span>
+        </div>
+        <div class="dots">${scored.map(x => `<div class="dot"><i style="background:${x.p >= 100 ? css('--good') : css('--bad')}"></i><b>${x.f.label}</b>${x.p}%</div>`).join('')}</div>`;
+
+      // KPI 4 — counters
+      const people = {};
+      rows.forEach(r => { const n = who(r); people[n] ??= { n, counts:0, recounts:0, last:r.submittedAt }; people[n].counts++; if (r.updatedAt) people[n].recounts++; people[n].last = r.submittedAt; });
+      const plist = Object.values(people).sort((a, b) => b.counts - a.counts);
+      const weekAgo = new Date(new Date(to || Date.now()).getTime() - 7 * 864e5);
+      const activeWeek = plist.filter(p => new Date(p.last) >= weekAgo).length;
+      document.getElementById('kpiCounters').innerHTML = `
+        <div class="kpi-top"><div><div class="kpi-label">Counters</div><div class="kpi-value">${plist.length}<small>${plist.length === 1 ? 'person' : 'people'}</small></div></div>${ring(pct(activeWeek, plist.length))}</div>
+        <div class="kpi-rows">
+          <span class="k">most</span><span class="v">${esc(plist[0].n)}</span><span class="d">${plist[0].counts}</span>
+          <span class="k">latest</span><span class="v">${esc(who(latest))}</span><span class="d">${fmtShort(latest.submittedAt)}</span>
+        </div>
+        <div class="split"><div class="labels"><span class="pos">${activeWeek} active last 7 days</span><span class="neg">${plist.length - activeWeek} quiet</span></div>
+        <div class="bar"><span style="width:${pct(activeWeek, plist.length)}%"></span><span style="flex:1"></span></div></div>`;
+
+      // Trend chart
+      const labels = rows.map(r => fmtShort(r.submittedAt));
+      const ink = css('--ink'), muted = css('--muted');
+      const itemColors = items.map((f, i) => f.color || ['#2E8B4E','#D9A400','#8A63B0','#3B7DD8','#D9534F'][i % 5]);
+      let datasets, legend;
+      if (state.trend === 'total') {
+        datasets = [
+          { label:'Total', data:rows.map(total), borderColor:ink, backgroundColor:ink, borderWidth:2.5, pointRadius:3, tension:.3 },
+          { label:'Par', data:rows.map(() => parTotal), borderColor:muted, borderDash:[5,4], borderWidth:1.5, pointRadius:0 }
+        ];
+        legend = `<span><i style="border-color:${ink}"></i>Total counted</span><span><i style="border-color:${muted};border-top-style:dashed"></i>Par level</span>`;
+      } else {
+        datasets = items.flatMap((f, i) => [
+          { label:f.label, data:rows.map(r => r[f.id] ?? 0), borderColor:itemColors[i], backgroundColor:itemColors[i], borderWidth:2.5, pointRadius:2.5, tension:.3 },
+          { label:`${f.label} par`, data:rows.map(() => f.par), borderColor:itemColors[i], borderDash:[5,4], borderWidth:1, pointRadius:0 }
+        ]);
+        legend = items.map((f, i) => `<span><i style="border-color:${itemColors[i]}"></i>${f.label} (dashed = par)</span>`).join('');
+      }
+      document.getElementById('trendLegend').innerHTML = legend;
+      document.getElementById('trendSub').textContent = state.trend === 'total'
+        ? 'Total units per count against the combined par level' : 'Units per item per count against each item’s par level';
+      const onPar = pct(total(latest), parTotal);
+      document.getElementById('trendTitle').innerHTML = `Is stock holding up? <em style="color:${onPar >= 100 ? css('--good') : css('--bad')}">${onPar >= 100 ? 'Yes' : 'Not yet'} — ${onPar}% of par</em>`;
+      charts.trend = new Chart(document.getElementById('trendChart'), {
+        type:'line', data:{ labels, datasets },
+        options:{ maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
+          plugins:{ legend:{ display:false } },
+          scales:{ y:{ beginAtZero:true, ticks:{ precision:0 }, grid:{ color:css('--line') } }, x:{ grid:{ display:false }, ticks:{ maxTicksLimit:8 } } } }
+      });
+
+      // Change between counts
+      const deltas = rows.map((r, i) => i === 0 ? null : total(r) - total(rows[i - 1])).slice(1);
+      const dLabels = labels.slice(1);
+      const valueLabels = {
+        id:'valueLabels',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart; ctx.save(); ctx.font = '700 10px "Atkinson Hyperlegible", sans-serif'; ctx.textAlign = 'center';
+          chart.getDatasetMeta(0).data.forEach((bar, i) => {
+            const v = deltas[i]; if (v == null || deltas.length > 16) return;
+            ctx.fillStyle = v >= 0 ? css('--good') : css('--bad');
+            ctx.fillText(signed(v), bar.x, v >= 0 ? bar.y - 5 : bar.y + 13);
+          });
+          ctx.restore();
+        }
+      };
+      charts.delta = new Chart(document.getElementById('deltaChart'), {
         type:'bar',
-        data: { labels: people.map(p => p[0]), datasets:[{ label:'Counts submitted', data:people.map(p => p[1]), backgroundColor:css('--leaf'), borderRadius:4 }] },
-        options: { maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }, plugins:{ legend:{ display:false } } }
-      }));
+        data:{ labels:dLabels.length ? dLabels : ['—'], datasets:[{ data:deltas.length ? deltas : [0],
+          backgroundColor:deltas.map(v => v >= 0 ? css('--good') : css('--bad')), borderRadius:2, maxBarThickness:28 }] },
+        options:{ maintainAspectRatio:false, layout:{ padding:{ top:14 } }, plugins:{ legend:{ display:false } },
+          scales:{ y:{ ticks:{ precision:0 }, grid:{ color:css('--line') } }, x:{ grid:{ display:false }, ticks:{ maxTicksLimit:10 } } } },
+        plugins:[valueLabels]
+      });
+
+      // Item ranking with bullet bars
+      document.getElementById('itemsTitle').textContent = state.items === 'bottom'
+        ? `Which items fall short of ${state.compare === 'par' ? 'par' : 'the last count'}?`
+        : `Which items are strongest against ${state.compare === 'par' ? 'par' : 'the last count'}?`;
+      document.getElementById('itemsSub').textContent = `Latest count · bar = quantity, mark = ${cmpName} (100%)`;
+      const ranked = scored.slice().sort((a, b) => state.items === 'bottom' ? a.p - b.p : b.p - a.p).slice(0, 5);
+      const maxP = Math.max(120, ...ranked.map(x => x.p));
+      const itemsTable = document.getElementById('itemsTable');
+      itemsTable.innerHTML = '<tr><th></th><th>#</th><th class="num">Qty</th><th>Qty vs ' + cmpName + '</th><th></th></tr>';
+      ranked.forEach((x, i) => {
+        const good = x.p >= 100;
+        itemsTable.insertAdjacentHTML('beforeend', `<tr>
+          <td class="name">${x.f.label}</td><td class="i">${i + 1}</td><td class="num">${x.qty}</td>
+          <td class="barcell"><div class="bullet" title="${x.qty} of ${x.base}"><span style="width:${Math.min(100, x.p / maxP * 100)}%;background:${good ? css('--good') : css('--bad')}"></span><b style="left:${100 / maxP * 100}%"></b></div></td>
+          <td class="pct ${good ? 'pos' : 'neg'}">${x.p}%</td></tr>`);
+      });
+
+      // People ranking
+      const pr = plist.slice().sort((a, b) => state.people === 'most' ? b.counts - a.counts : a.counts - b.counts).slice(0, 5);
+      const peopleTable = document.getElementById('peopleTable');
+      peopleTable.innerHTML = '<tr><th></th><th>#</th><th class="num">Counts</th><th>Share of counts</th><th>Recounted</th></tr>';
+      pr.forEach((p, i) => {
+        const share = pct(p.counts, rows.length);
+        const tr = el('tr', {},
+          el('td', { className:'name', textContent:p.n, title:p.n }),
+          el('td', { className:'i', textContent:i + 1 }),
+          el('td', { className:'num', textContent:p.counts }));
+        const bar = el('td', { className:'barcell' });
+        bar.innerHTML = `<div class="bullet"><span style="width:${share}%;background:${css('--good')}"></span></div>`;
+        tr.append(bar, el('td', { className:`pct ${p.recounts ? 'neg' : 'pos'}`, textContent:`${pct(p.recounts, p.counts)}%` }));
+        peopleTable.append(tr);
+      });
     }
 
-    document.getElementById('refresh').addEventListener('click', load);
-    load();
+    document.querySelectorAll('[data-compare],[data-trend],[data-items],[data-people]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = Object.keys(btn.dataset)[0];
+        state[key] = btn.dataset[key];
+        btn.parentElement.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+        render();
+      });
+    });
+    ['from','to'].forEach(id => document.getElementById(id).addEventListener('change', render));
+    init();
   </script>
 </body>
 </html>

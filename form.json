@@ -37,11 +37,40 @@
       "id": "stock",
       "title": "Stock count",
       "fields": [
-        { "id": "apples",   "label": "Apples",   "type": "integer", "default": 0, "min": 0, "max": 1000000, "color": "#D2483A" },
-        { "id": "bananas",  "label": "Bananas",  "type": "integer", "default": 0, "min": 0, "max": 1000000, "color": "#D9A400" },
-        { "id": "sultanas", "label": "Sultanas", "type": "integer", "default": 0, "min": 0, "max": 1000000, "color": "#8A63B0" }
+        {
+          "id": "apples",
+          "label": "Apples",
+          "type": "integer",
+          "default": 0,
+          "min": 0,
+          "max": 1000000,
+          "color": "#D2483A",
+          "par": 30
+        },
+        {
+          "id": "bananas",
+          "label": "Bananas",
+          "type": "integer",
+          "default": 0,
+          "min": 0,
+          "max": 1000000,
+          "color": "#D9A400",
+          "par": 24
+        },
+        {
+          "id": "sultanas",
+          "label": "Sultanas",
+          "type": "integer",
+          "default": 0,
+          "min": 0,
+          "max": 1000000,
+          "color": "#8A63B0",
+          "par": 12
+        }
       ],
-      "total": { "label": "Total items" }
+      "total": {
+        "label": "Total items"
+      }
     }
   ]
 }
