@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Stocktake">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#0F2A18">
+  <title>Past Stocktakes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    .table-card { padding:.4rem .4rem .2rem; }
+    .table-wrap { overflow-x:auto; }
+    table.list { width:100%; border-collapse:collapse; min-width:52rem; font-size:.85rem; }
+    table.list th { text-align:left; font-size:.7rem; color:var(--muted); font-weight:400; padding:.7rem .7rem .5rem; white-space:nowrap; border-bottom:1px solid var(--line); }
+    table.list td { padding:.6rem .7rem; border-bottom:1px solid var(--line); vertical-align:middle; }
+    table.list tr:last-child td { border-bottom:0; }
+    .num, table.list th.num { text-align:right; font-variant-numeric:tabular-nums; }
+    table.list td.time { white-space:nowrap; }
+    .sub { display:block; color:var(--muted); font-size:.72rem; }
+    td .badge { margin-left:.5rem; }
+    .expired { color:var(--bad); font-weight:700; }
+    .soon { color:var(--warn); font-weight:700; }
+    .row-actions { display:flex; gap:.35rem; justify-content:flex-end; align-items:center; white-space:nowrap; }
+    .row-actions .secondary { padding:.35rem .7rem; font-size:.78rem; text-decoration:none; }
+    .panel td { background:var(--tint); padding:1rem; }
+    .history { margin:0; padding:0; list-style:none; }
+    .history li { padding:.5rem 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap; }
+    .history li:last-child { border-bottom:0; }
+    .history .secondary { padding:.3rem .6rem; font-size:.75rem; }
+  </style>
+</head>
+<body>
+  <nav class="rail" aria-label="Main">
+    <a href="dashboard.html" class="logo" aria-label="Stocktake home">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+    </a>
+    <a href="dashboard.html" aria-label="Dashboard" title="Dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </a>
+    <a href="index.html" aria-label="New count" title="New count">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM12 11v6M9 14h6"/></svg>
+    </a>
+    <a href="review.html" aria-label="Review submissions" title="Review submissions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+    </a>
+    <a href="stocktake.html" aria-label="Daily stocktake sheet" title="Daily stocktake sheet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11M3 14.5h18"/></svg>
+    </a>
+    <a href="stocktakes.html" aria-current="page" aria-label="Past stocktakes" title="Past stocktakes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM3 4h18v3H3zM10 11h4"/></svg>
+    </a>
+    <span class="spacer"></span>
+    <a href="/.auth/logout?post_logout_redirect_uri=/login.html" aria-label="Sign out" title="Sign out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg>
+    </a>
+  </nav>
+
+  <main>
+    <header class="page">
+      <div>
+        <div class="crumb">Stocktake · Past stocktakes</div>
+        <h1>Past stocktakes</h1><span class="period" id="summary"></span>
+        <nav class="mobile-nav" aria-label="Pages"><a href="stocktake.html">New daily sheet</a><a href="dashboard.html">Dashboard</a><a href="/.auth/logout?post_logout_redirect_uri=/login.html">Sign out</a></nav>
+      </div>
+      <div class="controls">
+        <a class="primary" href="stocktake.html" style="text-decoration:none">New daily sheet</a>
+        <button type="button" class="secondary" id="refresh">Refresh</button>
+      </div>
+    </header>
+
+    <div id="status" class="status" aria-live="polite">Loading stocktakes…</div>
+    <div id="content" hidden>
+      <article class="card table-card">
+        <div class="table-wrap">
+          <table class="list">
+            <thead><tr><th>Date</th><th>Done by</th><th>Time</th><th class="num">Items counted</th><th class="num">Total units</th><th class="num">Not available</th><th>Soonest use-by</th><th></th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script src="stocktake-pdf.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); kids.forEach(k => k != null && n.append(k)); return n; };
+    const fmtDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const fmtStamp = d => new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    const fmtTime = t => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
+    const shortDay = iso => { const [y, m, d] = iso.split('-'); return `${Number(d)}/${Number(m)}`; };
+    let sheet = null, list = [], openPanel = null;
+
+    async function init() {
+      try { sheet = await (await fetch('stocktake.json', { cache: 'no-store' })).json(); }
+      catch { $('status').textContent = 'The product list could not be loaded. Check that stocktake.json is in the repository.'; return; }
+      load();
+    }
+
+    async function load() {
+      $('status').hidden = false; $('status').textContent = 'Loading stocktakes…'; $('content').hidden = true;
+      try {
+        const res = await fetch('/api/stocktakes');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Stocktakes could not be loaded. Try again.');
+        list = data;
+        if (!list.length) { $('status').innerHTML = 'No stocktakes yet. <a href="stocktake.html">Fill in the first daily sheet</a>.'; return; }
+        $('status').hidden = true; $('content').hidden = false;
+        render();
+      } catch (err) { $('status').textContent = err.message; }
+    }
+
+    function render() {
+      openPanel = null;
+      const corrected = list.filter(s => s.updatedAt).length;
+      $('summary').textContent = `${list.length} stocktake${list.length === 1 ? '' : 's'}${corrected ? `, ${corrected} corrected` : ''}`;
+      const warn = Number(sheet.useByWarningDays ?? 2);
+      const rows = $('rows'); rows.innerHTML = '';
+      list.forEach(s => {
+        const who = el('td', {}, [s.countedBy1, s.countedBy2].filter(Boolean).join(' & '));
+        if (s.updatedAt) who.append(el('span', { className: 'badge', textContent: 'Corrected' }));
+        let useCell = el('td', { textContent: '—' });
+        if (s.soonestUseBy) {
+          const days = Math.round((new Date(s.soonestUseBy + 'T00:00:00') - new Date(s.stocktakeDate + 'T00:00:00')) / 864e5);
+          useCell = el('td', { className: days < 0 ? 'expired' : days <= warn ? 'soon' : '', textContent: shortDay(s.soonestUseBy) + (days < 0 ? ' (passed)' : '') });
+        }
+        const tr = el('tr', {},
+          el('td', {}, fmtDate(s.stocktakeDate), s.updatedAt ? el('span', { className: 'sub', textContent: `Corrected ${fmtStamp(s.updatedAt)} by ${s.updatedBy}` }) : el('span', { className: 'sub', textContent: `#${s.id}` })),
+          who,
+          el('td', { className: 'time', textContent: s.startTime ? `${fmtTime(s.startTime)}${s.finishTime ? ' – ' + fmtTime(s.finishTime) : ''}` : '—' }),
+          el('td', { className: 'num', textContent: s.linesCounted }),
+          el('td', { className: 'num', textContent: s.totalQty }),
+          el('td', { className: 'num', textContent: s.unavailableCount }),
+          useCell,
+          el('td', {}, el('div', { className: 'row-actions' },
+            el('button', { type: 'button', className: 'link', textContent: 'History', onclick: e => showHistory(s, e.currentTarget.closest('tr')) }),
+            el('button', { type: 'button', className: 'secondary', textContent: 'PDF', ariaLabel: `Download PDF of stocktake from ${fmtDate(s.stocktakeDate)}`, onclick: e => pdf(s, e.currentTarget) }),
+            el('a', { className: 'secondary', href: `stocktake.html?id=${s.id}`, textContent: 'Open', ariaLabel: `Open stocktake from ${fmtDate(s.stocktakeDate)}` }))));
+        rows.append(tr);
+      });
+    }
+
+    async function pdf(s, btn) {
+      const label = btn.textContent; btn.disabled = true; btn.textContent = '…';
+      try {
+        const res = await fetch(`/api/stocktakes/${s.id}`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'That stocktake could not be loaded.');
+        window.stocktakePdf(sheet, data, data.updatedAt ? { label: `Corrected by ${data.updatedBy}${data.editNote ? ' · ' + data.editNote : ''}` } : {});
+      } catch (err) { alert(err.message); }
+      finally { btn.disabled = false; btn.textContent = label; }
+    }
+
+    async function showHistory(s, tr) {
+      if (openPanel) { openPanel.remove(); const same = openPanel.dataset.for === String(s.id); openPanel = null; if (same) return; }
+      const list = el('ul', { className: 'history' }, el('li', { textContent: 'Loading history…' }));
+      const panel = el('tr', { className: 'panel' }, el('td', { colSpan: 8 }, list));
+      panel.dataset.for = s.id;
+      tr.after(panel); openPanel = panel;
+      try {
+        const res = await fetch(`/api/stocktakes/${s.id}/history`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'History could not be loaded.');
+        list.innerHTML = '';
+        if (!data.length) { list.append(el('li', { textContent: 'This stocktake has never been corrected. What you see is the original.' })); return; }
+        list.append(el('li', {}, el('span', {}, el('b', { textContent: 'Current version' }), el('span', { className: 'sub', textContent: `Corrected ${fmtStamp(s.updatedAt)} by ${s.updatedBy}${s.editNote ? ' · ' + s.editNote : ''} · ${s.totalQty} units` }))));
+        data.forEach((v, i) => {
+          const total = (v.lines || []).reduce((t, l) => t + (l.qty || 0), 0);
+          const isOriginal = i === data.length - 1;
+          const title = isOriginal ? 'Original' : 'Earlier version';
+          const btn = el('button', { type: 'button', className: 'secondary', textContent: 'PDF of this version',
+            onclick: () => window.stocktakePdf(sheet, v, { label: `${title}, replaced ${fmtStamp(v.replacedAt)} by ${v.replacedBy}`, suffix: isOriginal ? '-original' : `-v${data.length - i}` }) });
+          list.append(el('li', {}, el('span', {}, el('b', { textContent: title }),
+            el('span', { className: 'sub', textContent: `Replaced ${fmtStamp(v.replacedAt)} by ${v.replacedBy} · ${total} units` })), btn));
+        });
+      } catch (err) { list.innerHTML = ''; list.append(el('li', { className: 'error', textContent: err.message })); }
+    }
+
+    $('refresh').addEventListener('click', load);
+    init();
+  </script>
+</body>
+</html>

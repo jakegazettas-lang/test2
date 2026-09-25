@@ -1,0 +1,63 @@
+{
+  "title": "Daily Stock Take Sheet",
+  "subtitle": "Finished products · Coolroom team use",
+  "useByWarningDays": 2,
+  "groups": [
+    {
+      "id": "meals",
+      "title": "Products",
+      "columns": [
+        { "size": "Small", "batches": 2 },
+        { "size": "Medium", "batches": 2 },
+        { "size": "Large", "batches": 2 }
+      ],
+      "products": [
+        { "name": "Meat Lasagna", "sizes": ["Small", "Medium", "Large"] },
+        { "name": "Spin/Ricotta Pumpkin Las (V)", "sizes": ["Small", "Medium", "Large"] },
+        { "name": "Beef Ravioli in Ragu", "sizes": ["Small"], "highlight": true },
+        { "name": "Meatballs in Ragu G/F", "sizes": ["Small"] },
+        { "name": "Tortellini Alla Panna", "sizes": ["Small"], "highlight": true },
+        { "name": "Penne Con Pollo", "sizes": ["Small"] },
+        { "name": "Risotto Funghi", "sizes": ["Small"], "highlight": true },
+        { "name": "Risotto Calabrese", "sizes": ["Small"] },
+        { "name": "Tortellini Chicken Rose", "sizes": ["Small"], "highlight": true },
+        { "name": "Spaghetti & Meatballs", "sizes": ["Small"] },
+        { "name": "Spaghetti Bolognese", "sizes": ["Small"] },
+        { "name": "Truffle Mac & Cheese", "sizes": ["Small"], "highlight": true },
+        { "name": "Crab Linguine", "sizes": ["Small"] },
+        { "name": "Spin/Ricotta Ravioli", "sizes": ["Small"] },
+        { "name": "Vegan Spaghetti Bolognese", "sizes": ["Small"] },
+        { "name": "Spaghetti Carbonara", "sizes": ["Small"] },
+        { "name": "Penne Pollo Pesto", "sizes": ["Small"], "highlight": true },
+        { "name": "Rigatoni Assisi", "sizes": ["Small"] },
+        { "name": "Rigatoni Lamb Ragu", "sizes": ["Small"] },
+        { "name": "Pappardelle Cacio Pepe", "sizes": ["Small"] }
+      ]
+    },
+    {
+      "id": "gf",
+      "title": "Gluten free and dessert",
+      "columns": [
+        { "size": "Small", "batches": 2 }
+      ],
+      "products": [
+        { "name": "Penne Bolognese G/F", "sizes": ["Small"] },
+        { "name": "Penne Con Pollo G/F", "sizes": ["Small"] },
+        { "name": "Tiramisu s/s", "sizes": ["Small"] }
+      ]
+    },
+    {
+      "id": "sauce",
+      "title": "Sauce (9 per box) G/F",
+      "columns": [
+        { "size": "Boxes", "batches": 2 },
+        { "size": "Units", "batches": 1 }
+      ],
+      "products": [
+        { "name": "Assissi (V)", "sizes": ["Boxes", "Units"] },
+        { "name": "Napoletana (V)", "sizes": ["Boxes", "Units"] },
+        { "name": "Puttanesca", "sizes": ["Boxes", "Units"] }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Stocktake">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#0F2A18">
+  <title>Sign in · Stocktake</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+  <style>
+    body { display:grid; place-items:center; padding:1.5rem; }
+    .login { width:100%; max-width:24rem; text-align:center; padding:2rem 1.75rem 1.75rem; }
+    .mark { width:52px; height:52px; border-radius:12px; background:var(--rail); color:#5CC47E; display:grid; place-items:center; margin:0 auto 1rem; }
+    .mark svg { width:26px; height:26px; }
+    .login h1 { display:block; margin:0 0 .3rem; font-size:1.5rem; }
+    .login p { color:var(--muted); margin:0 0 1.5rem; }
+    .signin { display:flex; align-items:center; justify-content:center; gap:.6rem; width:100%; padding:.8rem 1rem; font-size:.95rem; text-decoration:none; }
+    .signin svg { width:18px; height:18px; }
+    .note { font-size:.75rem; color:var(--muted); margin-top:1.25rem; line-height:1.5; }
+    #state { min-height:1.2em; font-size:.8rem; margin-top:.8rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="card login">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+    </div>
+    <h1>Stocktake</h1>
+    <p>Sign in to record counts, review submissions and see the dashboard.</p>
+    <a class="primary signin" id="signin" href="/.auth/login/aad?post_login_redirect_uri=/dashboard.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      Sign in with your Microsoft account
+    </a>
+    <div id="state" aria-live="polite"></div>
+    <p class="note">You’ll enter your email and password on Microsoft’s secure sign-in page. Access is by invitation only. If you need access, ask your administrator for an invite.</p>
+  </main>
+  <script>
+    // Already signed in? Skip straight to the dashboard.
+    fetch('/.auth/me').then(r => r.ok ? r.json() : null).then(me => {
+      const user = me && me.clientPrincipal;
+      if (!user) return;
+      if ((user.userRoles || []).some(r => ['staff', 'administrator', 'admin'].includes(String(r).toLowerCase()))) {
+        document.getElementById('state').textContent = 'You’re already signed in. Opening the dashboard…';
+        location.replace('/dashboard.html');
+      } else {
+        location.replace('/denied.html');
+      }
+    }).catch(() => {});
+  </script>
+</body>
+</html>

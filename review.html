@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Stocktake">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#0F2A18">
   <title>Review Submissions</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,8 +57,14 @@
     <a href="review.html" aria-current="page" aria-label="Review submissions" title="Review submissions">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
     </a>
+    <a href="stocktake.html" aria-label="Daily stocktake sheet" title="Daily stocktake sheet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11M3 14.5h18"/></svg>
+    </a>
+    <a href="stocktakes.html" aria-label="Past stocktakes" title="Past stocktakes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM3 4h18v3H3zM10 11h4"/></svg>
+    </a>
     <span class="spacer"></span>
-    <a href="/.auth/logout" aria-label="Sign out" title="Sign out">
+    <a href="/.auth/logout?post_logout_redirect_uri=/login.html" aria-label="Sign out" title="Sign out">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg>
     </a>
   </nav>
@@ -61,7 +74,7 @@
       <div>
         <div class="crumb">Stocktake · Review</div>
         <h1>Review submissions</h1><span class="period" id="summary"></span>
-        <nav class="mobile-nav" aria-label="Pages"><a href="dashboard.html">Dashboard</a><a href="index.html">New count</a><a href="/.auth/logout">Sign out</a></nav>
+        <nav class="mobile-nav" aria-label="Pages"><a href="stocktake.html">Daily sheet</a><a href="dashboard.html">Dashboard</a><a href="index.html">New count</a><a href="/.auth/logout?post_logout_redirect_uri=/login.html">Sign out</a></nav>
       </div>
       <div class="controls">
         <button type="button" class="secondary" id="refresh">Refresh</button>
@@ -82,6 +95,7 @@
     </div>
   </main>
 
+  <script src="app.js"></script>
   <script>
     const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); kids.forEach(k => k != null && n.append(k)); return n; };
     const fmtDate = d => new Date(d).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' });
@@ -97,10 +111,8 @@
         showStatus('The form settings could not be loaded. Check that form.json is in the repository.');
         return;
       }
-      try {
-        const me = await (await fetch('/.auth/me')).json();
-        signedInName = me?.clientPrincipal?.userDetails || '';
-      } catch {}
+      const user = await window.currentUser;
+      signedInName = user ? user.email : '';
       load();
     }
 

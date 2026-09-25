@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Stocktake">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#0F2A18">
+  <title>No access · Stocktake</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+  <style>
+    body { display:grid; place-items:center; padding:1.5rem; }
+    .box { width:100%; max-width:26rem; text-align:center; padding:2rem 1.75rem 1.75rem; }
+    .mark { width:52px; height:52px; border-radius:12px; background:var(--bad-soft); color:var(--bad); display:grid; place-items:center; margin:0 auto 1rem; }
+    .mark svg { width:26px; height:26px; }
+    .box h1 { display:block; margin:0 0 .5rem; font-size:1.4rem; }
+    .box p { color:var(--muted); margin:0 0 1rem; }
+    .who { font-weight:700; color:var(--ink); }
+    .actions { display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:1.25rem; }
+    .actions a { text-decoration:none; }
+  </style>
+</head>
+<body>
+  <main class="card box">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+    </div>
+    <h1>You don’t have access yet</h1>
+    <p id="msg">This account hasn’t been invited to Stocktake.</p>
+    <p>Ask your administrator to send you an invitation, then open the invitation link and sign in with the same account.</p>
+    <div class="actions">
+      <a class="primary" href="/.auth/logout?post_logout_redirect_uri=/login.html">Sign in with a different account</a>
+    </div>
+  </main>
+  <script>
+    fetch('/.auth/me').then(r => r.ok ? r.json() : null).then(me => {
+      const user = me && me.clientPrincipal;
+      if (!user) return;
+      const msg = document.getElementById('msg');
+      msg.textContent = 'You’re signed in as ';
+      msg.append(Object.assign(document.createElement('span'), { className:'who', textContent:user.userDetails }));
+      msg.append(', but this account hasn’t been invited to Stocktake.');
+    }).catch(() => {});
+  </script>
+</body>
+</html>

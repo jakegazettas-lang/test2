@@ -1,5 +1,65 @@
 {
   "platform": {
     "apiRuntime": "node:22"
+  },
+  "routes": [
+    {
+      "route": "/login.html",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/denied.html",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/app.css",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/manifest.webmanifest",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/icons/*",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/.auth/login/github",
+      "statusCode": 404
+    },
+    {
+      "route": "/.auth/login/twitter",
+      "statusCode": 404
+    },
+    {
+      "route": "/*",
+      "allowedRoles": [
+        "staff",
+        "administrator",
+        "admin"
+      ]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/login.html",
+      "statusCode": 302
+    },
+    "403": {
+      "rewrite": "/denied.html"
+    }
+  },
+  "mimeTypes": {
+    ".webmanifest": "application/manifest+json"
   }
 }
