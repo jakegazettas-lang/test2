@@ -1,7 +1,4 @@
 {
-  "platform": {
-    "apiRuntime": "node:20"
-  },
   "routes": [
     { "route": "/login.html", "allowedRoles": ["anonymous"] },
     { "route": "/denied.html", "allowedRoles": ["anonymous"] },
